@@ -1,0 +1,50 @@
+BepInEx 5.3 and NamedNPCs 1.0
+-----------------------------
+
+
+What is this?
+-------------
+BepInEx 5.3 pre-bundled with NamedNPCs 1.0
+BepInEx is a mod framework for Unity based games. It allows modification of Unity games without editing the base game.
+NamedNPCs is a mod for the game Streets of Rogue that randomly renames characters in game based on a provided list.
+
+
+Installing
+----------
+0. (Optional) Backup your Streets of Rogue installation, 'steamapps/common/Streets of Rogue'. This folder does not contain your save data.
+1. Copy these files into the Streets of Rogue top level directory (the folder containing 'StreetsOfRogue.exe').
+2. Run the game once to complete setup.
+
+
+Uninstalling
+------------
+Delete the 'BepInEx' folder, 'doorstop_config.ini' and 'winhttp.dll' from 'steamapps/common/Streets of Rogue'.
+To uninstall just NamedNPCs, delete the 'NamedNPCs' folder from 'BepInEx\plugins'.
+BepInEx and NamedNPCs do not directly modify game files. No other changes are necessary.
+If in doubt, verify your game files through Steam.
+
+
+Usage
+-----
+NPCs in game will be named randomly and automatically.
+The number of named NPCs can be altered via the configuration.
+Most names are based on the list of names provided, 'BepInEx\plugins\NamedNPCs\names.txt'.
+Some special cases are defined in 'BepInEx\plugins\NamedNPCs\config.cfg'.
+
+
+Configuration
+-------------
+Configuration is handled outside the game through the config file, 'BepInEx\plugins\NamedNPCs\config.cfg'.
+See the config file for more information on the various available settings.
+
+
+Compatability
+-----------
+NamedNPCs is build for single player only. While multiple players can install the mod, names will not synchronize between players.
+This may be addressed in a future version.
+NamedNPCs is compatible with Streets of Rogue 91c. Other versions may work but your mileage may vary.
+
+
+Contact
+-------
+Discord: Fishlips13#1467
