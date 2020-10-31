@@ -18,10 +18,12 @@ namespace NamedNPCs
         public const string pluginVersion = "1.0";
 
         public static bool enableRenaming = false;
+        public static bool enableDialogueReplacement = false;
         public static int levelSpawnsMin = 0;
         public static int levelSpawnsMax = 0;
         public static int nameOccurancePerLevelMax = 0;
         public static int nameOccurancePerRunMax = 0;
+        public static float dialogueReplacementChance = 0.0f;
         public static string playerName = "";
         public static string priorityName = "";
 
@@ -52,6 +54,9 @@ namespace NamedNPCs
                             case "EnableRenaming":
                                 enableRenaming = paramBool;
                                 break;
+                            case "EnableDialogueReplacement":
+                                enableDialogueReplacement = paramBool;
+                                break;
                         }
                     }
                     else if (int.TryParse(paramValue, out int paramInt)) // Integers
@@ -70,7 +75,9 @@ namespace NamedNPCs
                             case "NameOccurancePerRunMax":
                                 nameOccurancePerRunMax = Math.Max(0, paramInt);
                                 break;
-                                
+                            case "DialogueReplacementChance":
+                                dialogueReplacementChance = Mathf.Clamp(paramInt / 100.0f, 0.0f, 1.0f);
+                                break;
                         }
                     }
                     else // Strings
@@ -103,14 +110,13 @@ namespace NamedNPCs
                     if (string.IsNullOrWhiteSpace(line) || line.StartsWith("#"))
                         continue;
 
-                    string[] entries = line.Trim().Split(',');
+                    string[] entries = line.Trim().Split('|');
                     string npcName = entries[0];
                     List<string> dialogues = entries.Skip(1).ToList();
 
                     if (npcName.ToLower() == priorityName.ToLower() || npcNamesDict.ContainsKey(npcName))
                         continue;
 
-                    //npcNamesList.Add(npcName);
                     npcNamesDict.Add(npcName, new NPCName(npcName, dialogues));
                 }
             }
@@ -122,10 +128,18 @@ namespace NamedNPCs
  
             // Link in patch methods
             Harmony harmony = new Harmony(pluginGuid);
+            MethodInfo original;
+            MethodInfo patch;
 
-            MethodInfo original = AccessTools.Method(typeof(Fader), "FadedIn");
-            MethodInfo patch = AccessTools.Method(typeof(Renamer), "FadedIn_PrefixPatch");
+            if (!enableRenaming)
+                return;
+
+            original = AccessTools.Method(typeof(Fader), "FadedIn");
+            patch = AccessTools.Method(typeof(Renamer), "FadedIn_PrefixPatch");
             harmony.Patch(original, new HarmonyMethod(patch));
+
+            if (!enableDialogueReplacement)
+                return;
 
             original = AccessTools.Method(typeof(Agent), "Say", new Type[] { typeof(string), typeof(bool) });
             patch = AccessTools.Method(typeof(Renamer), "Say_PrefixPatch");
@@ -136,7 +150,7 @@ namespace NamedNPCs
         // --- Triggered finally after level setup
         public static void FadedIn_PrefixPatch()
         {
-            if (!enableRenaming || GameController.gameController.levelEditing)
+            if (GameController.gameController.levelEditing)
                 return;
 
             // Flush run name use on Floor 1-1
@@ -169,7 +183,6 @@ namespace NamedNPCs
                 if (npcName.CanUse(nameOccurancePerLevelMax, nameOccurancePerRunMax))
                     npcNamePool.Add(npcName);
             }
-
             // Mass name indiscriminately in homebase
             if (GameController.gameController.sessionDataBig.curLevel == 0)
             {
@@ -208,26 +221,32 @@ namespace NamedNPCs
             // Name agents
             while (nameCandidates.Count > 0 && agentPool.Count > 0)
             {
-                if (!nameCandidates[0].CanUse(nameOccurancePerLevelMax, nameOccurancePerRunMax))
+                int nameIndex = UnityEngine.Random.Range(0, nameCandidates.Count);
+
+                if (!nameCandidates[nameIndex].CanUse(nameOccurancePerLevelMax, nameOccurancePerRunMax))
                 {
-                    nameCandidates.RemoveAt(0);
+                    nameCandidates.RemoveAt(nameIndex);
                     continue;
                 }
 
                 int agentIndex = UnityEngine.Random.Range(0, agentPool.Count);
-
-                agentPool[agentIndex].agentRealName = nameCandidates[0].Name;
+                
+                agentPool[agentIndex].agentRealName = nameCandidates[nameIndex].Name;
                 agentPool.RemoveAt(agentIndex);
 
-                nameCandidates[0].Use();
+                nameCandidates[nameIndex].Use();
             }
         }
 
         //Say patch - replace dialogue lines just-in-time
         public static void Say_PrefixPatch(Agent __instance, ref string myMessage)
         {
-            if (npcNamesDict.ContainsKey(__instance.agentRealName))
-                myMessage = npcNamesDict[__instance.agentRealName].GetRandomDialogue();
+            if (npcNamesDict.ContainsKey(__instance.agentRealName) && UnityEngine.Random.Range(0.0f, 1.0f) > dialogueReplacementChance)
+            {
+                string message = npcNamesDict[__instance.agentRealName].GetRandomDialogue();
+                if (message != "")
+                    myMessage = message;
+            }
         }
     }
 }

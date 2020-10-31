@@ -47,7 +47,8 @@ namespace NamedNPCs
         {
             if (dialogues.Count == 0)
                 return "";
-
+            else if (dialogues.Count == 1)
+                return dialogues[0];
 
             int index = UnityEngine.Random.Range(0, dialogues.Count);
             if (prevDialogue != "")

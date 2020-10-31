@@ -30,6 +30,7 @@ NPCs in game will be named randomly and automatically.
 The number of named NPCs can be altered via the configuration.
 Most names are based on the list of names provided, 'BepInEx\plugins\NamedNPCs\names.txt'.
 Some special cases are defined in 'BepInEx\plugins\NamedNPCs\config.cfg'.
+Dialogue lines tied to names can also be replaced, also defiend in 'BepInEx\plugins\NamedNPCs\names.txt'.
 
 
 Configuration
