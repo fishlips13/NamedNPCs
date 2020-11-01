@@ -1,10 +1,10 @@
-BepInEx 5.3 and NamedNPCs 1.0
+BepInEx 5.3 and NamedNPCs 1.1
 -----------------------------
 
 
 What is this?
 -------------
-BepInEx 5.3 pre-bundled with NamedNPCs 1.0
+BepInEx 5.3 pre-bundled with NamedNPCs 1.1
 BepInEx is a mod framework for Unity based games. It allows modification of Unity games without editing the base game.
 NamedNPCs is a mod for the game Streets of Rogue that randomly renames characters in game based on a provided list.
 

@@ -23,15 +23,18 @@ namespace NamedNPCs
         public static int levelSpawnsMax = 0;
         public static int nameOccurancePerLevelMax = 0;
         public static int nameOccurancePerRunMax = 0;
-        public static float dialogueReplacementChance = 0.0f;
+        public static float regularDialogueReplacementChance = 0.0f;
+        public static float priorityDialogueReplacementChance = 0.0f;
         public static string playerName = "";
-        public static string priorityName = "";
 
         public static Dictionary<string, NPCName> npcNamesDict = new Dictionary<string, NPCName>();
+        public static NPCName priorityNPCName;
 
         public void Awake()
         {
             Logger.LogInfo(string.Format("{0} v{1} ({2}) started.", pluginName, pluginVersion, pluginGuid));
+
+            string priorityName = "";
 
             try
             {
@@ -59,24 +62,27 @@ namespace NamedNPCs
                                 break;
                         }
                     }
-                    else if (int.TryParse(paramValue, out int paramInt)) // Integers
+                    else if (float.TryParse(paramValue, out float paramNumber)) // Numbers
                     {
                         switch (paramName)
                         {
                             case "LevelSpawnsMin":
-                                levelSpawnsMin = Math.Max(0, paramInt);
+                                levelSpawnsMin = Math.Max(0, (int)paramNumber);
                                 break;
                             case "LevelSpawnsMax":
-                                levelSpawnsMax = Math.Max(0, paramInt);
+                                levelSpawnsMax = Math.Max(0, (int)paramNumber);
                                 break;
                             case "NameOccurancePerLevelMax":
-                                nameOccurancePerLevelMax = Math.Max(0, paramInt);
+                                nameOccurancePerLevelMax = Math.Max(0, (int)paramNumber);
                                 break;
                             case "NameOccurancePerRunMax":
-                                nameOccurancePerRunMax = Math.Max(0, paramInt);
+                                nameOccurancePerRunMax = Math.Max(0, (int)paramNumber);
                                 break;
-                            case "DialogueReplacementChance":
-                                dialogueReplacementChance = Mathf.Clamp(paramInt / 100.0f, 0.0f, 1.0f);
+                            case "RegularDialogueReplacementChance":
+                                regularDialogueReplacementChance = Mathf.Clamp(paramNumber / 100.0f, 0.0f, 1.0f);
+                                break;
+                            case "PriorityDialogueReplacementChance":
+                                priorityDialogueReplacementChance = Mathf.Clamp(paramNumber / 100.0f, 0.0f, 1.0f);
                                 break;
                         }
                     }
@@ -114,7 +120,13 @@ namespace NamedNPCs
                     string npcName = entries[0];
                     List<string> dialogues = entries.Skip(1).ToList();
 
-                    if (npcName.ToLower() == priorityName.ToLower() || npcNamesDict.ContainsKey(npcName))
+                    if (priorityNPCName == null && npcName.ToLower() == priorityName.ToLower())
+                    {
+                        priorityNPCName = new NPCName(npcName, dialogues);
+                        continue;
+                    }
+
+                    if (npcNamesDict.ContainsKey(npcName))
                         continue;
 
                     npcNamesDict.Add(npcName, new NPCName(npcName, dialogues));
@@ -168,8 +180,8 @@ namespace NamedNPCs
             List<Agent> agentPool = new List<Agent>();
             foreach (Agent agent in GameController.gameController.agentList)
             {
-                if (priorityName != "" && (agent.agentRealName == "Killer Robot" || agent.agentRealName == "Mayor"))
-                    agent.agentRealName = priorityName;
+                if (priorityNPCName.Name != "" && (agent.agentRealName == "Killer Robot" || agent.agentRealName == "Mayor"))
+                    agent.agentRealName = priorityNPCName.Name;
                 else if (agent.isPlayer == 0) // All other non-players (0 seems to mean false here)
                     agentPool.Add(agent);
                 else if (playerName != "")
@@ -241,9 +253,17 @@ namespace NamedNPCs
         //Say patch - replace dialogue lines just-in-time
         public static void Say_PrefixPatch(Agent __instance, ref string myMessage)
         {
-            if (npcNamesDict.ContainsKey(__instance.agentRealName) && UnityEngine.Random.Range(0.0f, 1.0f) > dialogueReplacementChance)
+            float chance = UnityEngine.Random.Range(0.0f, 1.0f);
+            NPCName npcName = null;
+
+            if (npcNamesDict.ContainsKey(__instance.agentRealName) && chance < regularDialogueReplacementChance)
+                npcName = npcNamesDict[__instance.agentRealName];
+            else if (__instance.agentRealName == priorityNPCName.Name && chance < priorityDialogueReplacementChance)
+                npcName = priorityNPCName;
+
+            if (npcName != null)
             {
-                string message = npcNamesDict[__instance.agentRealName].GetRandomDialogue();
+                string message = npcName.GetRandomDialogue();
                 if (message != "")
                     myMessage = message;
             }
