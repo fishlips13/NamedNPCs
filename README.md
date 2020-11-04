@@ -1,7 +1,10 @@
 NamedNPCs
 -----------------------------
 NamedNPCs is a mod for the game Streets of Rogue that randomly renames characters in game based on a provided list.
-It is based on BepInEx, a mod framework for Unity based games
+Additionally, random dialogue can be added tied to renamed characters.
+It is based on BepInEx, a mod framework for Unity based games.
+
+![preview gif](second-4.gif)
 
 
 Usage
